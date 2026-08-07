@@ -75,6 +75,7 @@ const navItems: NavSection[] = [
   {
     title: 'System',
     items: [
+      { href: '/data-manager', label: 'Data Manager', icon: Icons.database },
       { href: '/settings', label: 'Settings', icon: Icons.settings },
     ],
   },

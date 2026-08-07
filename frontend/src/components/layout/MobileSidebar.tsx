@@ -23,8 +23,16 @@ const navItems = [
     ],
   },
   {
+    title: 'AI Intelligence',
+    items: [
+      { href: '/ai/policies', label: 'AI Policies', icon: Icons.brain },
+      { href: '/ai/insights', label: 'AI Insights', icon: Icons.lightbulb },
+    ],
+  },
+  {
     title: 'System',
     items: [
+      { href: '/data-manager', label: 'Data Manager', icon: Icons.database },
       { href: '/settings', label: 'Settings', icon: Icons.settings },
     ],
   },

@@ -1,171 +1,135 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Icons } from '@/components/ui/icons'
+import { useCallback, useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { apiClient } from '@/lib/api-client'
+import { Card, CardContent } from '@/components/ui/card'
+import { CardWatermark } from '@/components/ui/card-watermark'
+import { Icons } from '@/components/ui/icons'
+import { WorkbenchItemCard } from '@/components/command-center/workbench/WorkbenchItemCard'
+import { ResolveModal } from '@/components/command-center/workbench/ResolveModal'
+import type { WorkbenchItem } from '@/types/command-center'
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
 }
-
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
 }
 
-// Sample workbench tools
-const tools = [
-  {
-    id: 'ai-assistant',
-    title: 'AI Assistant',
-    description: 'Chat with your AI assistant for help with tasks',
-    icon: Icons.sparkles,
-    color: 'bg-gradient-to-br from-brand-navy to-brand-purple',
-    status: 'available',
-  },
-  {
-    id: 'automation',
-    title: 'Automation Builder',
-    description: 'Create and manage automated workflows',
-    icon: Icons.zap,
-    color: 'bg-gradient-to-br from-brand-cornflower to-brand-purple',
-    status: 'available',
-  },
-  {
-    id: 'analytics',
-    title: 'Analytics Dashboard',
-    description: 'View detailed analytics and reports',
-    icon: Icons.activity,
-    color: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
-    status: 'coming-soon',
-  },
-  {
-    id: 'integrations',
-    title: 'Integrations',
-    description: 'Connect with third-party services',
-    icon: Icons.share,
-    color: 'bg-gradient-to-br from-amber-500 to-orange-500',
-    status: 'coming-soon',
-  },
-]
-
-function ToolCard({ tool }: { tool: (typeof tools)[0] }) {
-  const Icon = tool.icon
-  const isComingSoon = tool.status === 'coming-soon'
-
-  return (
-    <motion.div variants={itemVariants}>
-      <Card
-        className={cn(
-          'h-full cursor-pointer transition-all duration-300',
-          isComingSoon && 'opacity-60'
-        )}
-      >
-        <CardHeader>
-          <div className='flex items-start justify-between'>
-            <div
-              className={cn(
-                'flex h-12 w-12 items-center justify-center rounded-xl text-white',
-                tool.color
-              )}
-            >
-              <Icon className='h-6 w-6' strokeWidth={1.5} />
-            </div>
-            {isComingSoon && (
-              <span className='rounded-full bg-muted px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-brand-muted'>
-                Coming Soon
-              </span>
-            )}
-          </div>
-          <CardTitle className='mt-4'>{tool.title}</CardTitle>
-          <CardDescription>{tool.description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button
-            variant={isComingSoon ? 'outline' : 'default'}
-            className='w-full'
-            disabled={isComingSoon}
-          >
-            {isComingSoon ? 'Notify Me' : 'Open Tool'}
-            {!isComingSoon && <Icons.arrowRight className='ml-2 h-4 w-4' />}
-          </Button>
-        </CardContent>
-      </Card>
-    </motion.div>
-  )
-}
+type Tab = 'pending' | 'resolved'
 
 export default function WorkbenchPage() {
+  const [tab, setTab] = useState<Tab>('pending')
+  const [items, setItems] = useState<WorkbenchItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [resolveTarget, setResolveTarget] = useState<{ item: WorkbenchItem; action: 'approve' | 'reject' | 'modify' } | null>(null)
+
+  const loadItems = useCallback(async (targetTab: Tab) => {
+    setIsLoading(true)
+    try {
+      const query = targetTab === 'pending' ? 'status=pending' : ''
+      const data = await apiClient.get<WorkbenchItem[]>(`/api/workbench?${query}&limit=100`)
+      const filtered = targetTab === 'resolved' ? data.filter((i) => i.status !== 'pending') : data
+      setItems(filtered)
+    } catch {
+      setItems([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadItems(tab)
+  }, [tab, loadItems])
+
+  const handleResolve = async (notes: string, correctedAction: string) => {
+    if (!resolveTarget) return
+    await apiClient.post(`/api/workbench/${resolveTarget.item.id}/resolve`, {
+      action: resolveTarget.action,
+      notes,
+      resolved_by: 'operator@autopilot.local',
+      corrected_action: correctedAction || undefined,
+    })
+    setResolveTarget(null)
+    await loadItems(tab)
+  }
+
+  const pendingCount = tab === 'pending' ? items.length : undefined
+
   return (
-    <motion.div
-      className='space-y-8'
-      variants={containerVariants}
-      initial='hidden'
-      animate='visible'
-    >
-      {/* Header */}
+    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
       <motion.div variants={itemVariants}>
-        <h1 className='text-display-3 font-bold tracking-tight text-brand-navy'>
-          Workbench
-        </h1>
-        <p className='mt-2 text-lg text-muted-foreground'>
-          Access your AI tools and automation workflows.
+        <h1 className="text-display-3 font-bold tracking-tight text-brand-navy lg:text-display-2">Workbench</h1>
+        <p className="mt-2 text-lg text-muted-foreground">
+          Exceptions the Orchestrator couldn&apos;t resolve on its own — review context, then approve, reject, or modify.
         </p>
       </motion.div>
 
-      {/* Tools Grid */}
-      <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-4'>
-        {tools.map((tool) => (
-          <ToolCard key={tool.id} tool={tool} />
+      <motion.div variants={itemVariants} className="flex gap-1 p-1.5 bg-gray-100 rounded-xl w-fit">
+        {(['pending', 'resolved'] as Tab[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn(
+              'relative flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors capitalize',
+              tab === t ? 'bg-white text-brand-navy shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            {t}
+            {t === 'pending' && pendingCount !== undefined && pendingCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-semibold text-white">
+                {pendingCount}
+              </span>
+            )}
+          </button>
         ))}
-      </div>
-
-      {/* Quick Actions */}
-      <motion.div variants={itemVariants}>
-        <Card>
-          <CardHeader>
-            <CardTitle className='flex items-center gap-2'>
-              <Icons.zap className='h-5 w-5 text-brand-cornflower' />
-              Quick Actions
-            </CardTitle>
-            <CardDescription>
-              Frequently used actions for faster access
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='flex flex-wrap gap-3'>
-              <Button variant='outline' size='sm'>
-                <Icons.plus className='mr-2 h-4 w-4' />
-                New Task
-              </Button>
-              <Button variant='outline' size='sm'>
-                <Icons.fileText className='mr-2 h-4 w-4' />
-                Generate Report
-              </Button>
-              <Button variant='outline' size='sm'>
-                <Icons.mail className='mr-2 h-4 w-4' />
-                Send Notification
-              </Button>
-              <Button variant='outline' size='sm'>
-                <Icons.download className='mr-2 h-4 w-4' />
-                Export Data
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </motion.div>
+
+      <motion.div variants={itemVariants} className="space-y-3">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Icons.loader className="h-8 w-8 animate-spin text-brand-cornflower" />
+          </div>
+        ) : items.length === 0 ? (
+          <Card className="relative overflow-hidden">
+            <CardWatermark opacity={3} scale={1} />
+            <CardContent className="relative z-10 flex flex-col items-center justify-center py-16 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-brand-cornflower/20">
+                <Icons.checkCircle className="h-8 w-8 text-emerald-600" strokeWidth={1.5} />
+              </div>
+              <h3 className="font-display text-lg font-semibold text-brand-navy">
+                {tab === 'pending' ? 'Queue is clear' : 'No resolved items yet'}
+              </h3>
+              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                {tab === 'pending'
+                  ? 'No exceptions are waiting on human review right now.'
+                  : 'Resolved escalations will show up here.'}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <AnimatePresence mode="popLayout">
+            {items.map((item) => (
+              <WorkbenchItemCard
+                key={item.id}
+                item={item}
+                onResolve={(target, action) => setResolveTarget({ item: target, action })}
+              />
+            ))}
+          </AnimatePresence>
+        )}
+      </motion.div>
+
+      <ResolveModal
+        item={resolveTarget?.item ?? null}
+        action={resolveTarget?.action ?? null}
+        onClose={() => setResolveTarget(null)}
+        onConfirm={handleResolve}
+      />
     </motion.div>
   )
 }

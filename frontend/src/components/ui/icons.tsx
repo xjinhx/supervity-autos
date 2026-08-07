@@ -86,6 +86,11 @@ import {
   GripVertical,
   Repeat,
   Flag,
+  Database,
+  PlugZap,
+  ThumbsUp,
+  ThumbsDown,
+  History,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -210,7 +215,12 @@ export const Icons = {
   listFilter: ListFilter,
   building: Building2,
   barChart: BarChart3,
-  
+  database: Database,
+  plug: PlugZap,
+  thumbsUp: ThumbsUp,
+  thumbsDown: ThumbsDown,
+  history: History,
+
   // Drag & Drop
   gripVertical: GripVertical,
   

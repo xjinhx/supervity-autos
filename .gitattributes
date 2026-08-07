@@ -1,0 +1,7 @@
+# Force LF line endings for files executed inside Linux containers, regardless
+# of the host's core.autocrlf setting. Without this, Windows checkouts with
+# autocrlf=true silently corrupt start_gunicorn.sh with CRLF endings, which
+# crash-loops the backend container (dash reads blank lines as a literal "\r"
+# command and, once `set -e` is active, exits immediately).
+*.sh text eol=lf
+Dockerfile text eol=lf

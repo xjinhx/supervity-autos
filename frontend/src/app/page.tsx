@@ -1,169 +1,74 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
-import apiClient from '@/lib/api-client'
+import { apiClient } from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { CardWatermark } from '@/components/ui/card-watermark'
 import { Icons } from '@/components/ui/icons'
-import { ActivityChart } from '@/components/ActivityChart'
+import { DashboardActivityChart } from '@/components/command-center/DashboardActivityChart'
+import { CohortSnapshot } from '@/components/command-center/CohortSnapshot'
 import { cn } from '@/lib/utils'
+import type { DashboardSummary, DashboardActivity, Hire, OrchestratorRunSummary } from '@/types/command-center'
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.1,
-    },
-  },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
 }
-
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.5,
-      ease: [0.25, 0.46, 0.45, 0.94],
-    },
-  },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] } },
 }
 
-// Animated number component
-function AnimatedNumber({
-  value,
-  suffix = '',
-  duration = 1000,
-}: {
-  value: number
-  suffix?: string
-  duration?: number
-}) {
+function AnimatedNumber({ value, suffix = '', duration = 800 }: { value: number; suffix?: string; duration?: number }) {
   const [displayValue, setDisplayValue] = useState(0)
   const ref = useRef<HTMLSpanElement>(null)
-  const isInView = useInView(ref, { once: true, amount: 0.5 })
-  const hasAnimated = useRef(false)
+  const isInView = useInView(ref, { once: false, amount: 0.5 })
 
   useEffect(() => {
-    if (!isInView || hasAnimated.current) return
-    hasAnimated.current = true
-
+    if (!isInView) return
     const startTime = performance.now()
-
+    const startValue = displayValue
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime
       const progress = Math.min(elapsed / duration, 1)
-      const eased = 1 - Math.pow(2, -10 * progress)
-
-      setDisplayValue(Math.round(eased * value))
-
-      if (progress < 1) {
-        requestAnimationFrame(animate)
-      } else {
-        setDisplayValue(value)
-      }
+      setDisplayValue(Math.round(startValue + (value - startValue) * progress))
+      if (progress < 1) requestAnimationFrame(animate)
+      else setDisplayValue(value)
     }
-
     requestAnimationFrame(animate)
-  }, [value, duration, isInView])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, isInView])
 
-  const formatValue = (num: number): string => {
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K'
-    }
-    return num.toString()
-  }
-
-  return (
-    <span ref={ref}>
-      {formatValue(displayValue)}
-      {suffix}
-    </span>
-  )
+  return <span ref={ref}>{displayValue.toLocaleString()}{suffix}</span>
 }
 
-// Stats Card Component with Bento styling
 interface StatCardProps {
   title: string
   value: number
   suffix?: string
   icon: React.ElementType
-  trend?: { value: string; positive: boolean }
   colorClass: string
   delay?: number
 }
 
-function StatCard({
-  title,
-  value,
-  suffix = '',
-  icon: Icon,
-  trend,
-  colorClass,
-  delay = 0,
-}: StatCardProps) {
+function StatCard({ title, value, suffix = '', icon: Icon, colorClass, delay = 0 }: StatCardProps) {
   return (
-    <motion.div
-      variants={itemVariants}
-      initial='hidden'
-      animate='visible'
-      transition={{ delay }}
-      whileHover={{ y: -4 }}
-    >
-      <Card className='group relative h-full cursor-default overflow-hidden'>
-        {/* Branded watermark texture */}
+    <motion.div variants={itemVariants} transition={{ delay }} whileHover={{ y: -4 }}>
+      <Card className="group relative h-full cursor-default overflow-hidden">
         <CardWatermark opacity={3} scale={0.9} />
-        <CardContent className='relative z-10 p-5'>
-          <div className='flex items-start justify-between'>
-            <div className='space-y-2'>
-              {/* Micro label */}
-              <p className='text-micro uppercase text-brand-muted transition-colors duration-200 group-hover:text-brand-cornflower'>
-                {title}
-              </p>
-              {/* Display number */}
-              <p className='font-display text-[2.25rem] font-bold leading-none tracking-tight text-brand-navy'>
+        <CardContent className="relative z-10 p-5">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <p className="text-micro uppercase text-brand-muted transition-colors duration-200 group-hover:text-brand-cornflower">{title}</p>
+              <p className="font-display text-[2.25rem] font-bold leading-none tracking-tight text-brand-navy">
                 <AnimatedNumber value={value} suffix={suffix} />
               </p>
-              {/* Trend */}
-              {trend && (
-                <motion.p
-                  className={cn(
-                    'flex items-center gap-1 text-xs font-medium',
-                    trend.positive ? 'text-emerald-600' : 'text-red-500'
-                  )}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: delay + 0.3 }}
-                >
-                  {trend.positive ? (
-                    <Icons.trendingUp className='h-3 w-3' strokeWidth={2} />
-                  ) : (
-                    <Icons.trendingUp
-                      className='h-3 w-3 rotate-180'
-                      strokeWidth={2}
-                    />
-                  )}
-                  {trend.value}
-                </motion.p>
-              )}
             </div>
-            {/* Icon */}
-            <motion.div
-              className={cn(
-                'rounded-xl p-2.5 text-white',
-                'shadow-lg',
-                colorClass
-              )}
-              whileHover={{ scale: 1.15, rotate: 5 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-            >
-              <Icon className='h-5 w-5' strokeWidth={1.5} />
-            </motion.div>
+            <div className={cn('rounded-xl p-2.5 text-white shadow-lg', colorClass)}>
+              <Icon className="h-5 w-5" strokeWidth={1.5} />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -171,189 +76,85 @@ function StatCard({
   )
 }
 
-// Hero Section
-function HeroSection({ userName }: { userName?: string }) {
-  const firstName = userName?.split(' ')[0] || 'there'
+export default function HomePage() {
+  const [summary, setSummary] = useState<DashboardSummary | null>(null)
+  const [activity, setActivity] = useState<DashboardActivity | null>(null)
+  const [hires, setHires] = useState<Hire[]>([])
+  const [isRunning, setIsRunning] = useState(false)
+  const [lastRunResult, setLastRunResult] = useState<OrchestratorRunSummary | null>(null)
 
-  return (
-    <motion.div
-      className='col-span-12 py-2'
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-    >
-      <h1 className='text-display-3 font-bold tracking-tight text-brand-navy lg:text-display-2'>
-        Where Intelligence <br className='hidden sm:block' />
-        <span className='text-gradient'>Meets Human.</span>
-      </h1>
-      <p className='mt-4 text-lg font-light text-muted-foreground'>
-        Welcome back, {firstName}. Your AI Command Center is ready.
-      </p>
-    </motion.div>
-  )
-}
+  const loadAll = useCallback(async () => {
+    const [summaryData, activityData, hiresData] = await Promise.all([
+      apiClient.get<DashboardSummary>('/api/dashboard/summary'),
+      apiClient.get<DashboardActivity>('/api/dashboard/activity?days=14'),
+      apiClient.get<Hire[]>('/api/orchestrator/hires'),
+    ])
+    setSummary(summaryData)
+    setActivity(activityData)
+    setHires(hiresData)
+  }, [])
 
-// Diagnostics Card
-function DiagnosticsCard() {
-  const [apiResponse, setApiResponse] = useState<string>('')
-  const [adminResponse, setAdminResponse] = useState<string>('')
-  const [isLoading, setIsLoading] = useState(false)
+  useEffect(() => {
+    loadAll()
+  }, [loadAll])
 
-  const callApi = async (
-    endpoint: string,
-    setter: React.Dispatch<React.SetStateAction<string>>
-  ) => {
-    setIsLoading(true)
-    setter('Loading...')
+  const handleRunOrchestrator = async () => {
+    setIsRunning(true)
     try {
-      const data = await apiClient(endpoint)
-      setter(JSON.stringify(data, null, 2))
-    } catch (error) {
-      setter(
-        `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      const result = await apiClient.post<OrchestratorRunSummary>('/api/orchestrator/simulate-run')
+      setLastRunResult(result)
+      await loadAll()
     } finally {
-      setIsLoading(false)
+      setIsRunning(false)
     }
   }
 
   return (
-    <Card className='relative col-span-12 h-full overflow-hidden'>
-      <CardWatermark opacity={3} scale={1.1} />
-      <CardHeader className='relative z-10'>
-        <CardTitle className='flex items-center gap-2'>
-          <Icons.activity
-            className='h-5 w-5 text-brand-cornflower'
-            strokeWidth={1.5}
-          />
-          System Diagnostics
-        </CardTitle>
-      </CardHeader>
-      <CardContent className='relative z-10 space-y-6'>
-        <div className='space-y-3'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <p className='text-sm font-medium text-foreground'>
-                Standard Authorization
-              </p>
-              <p className='mt-0.5 font-mono text-xs text-muted-foreground'>
-                /api/test
-              </p>
-            </div>
-          </div>
-          <Button
-            onClick={() => callApi('/api/test', setApiResponse)}
-            disabled={isLoading}
-            variant='outline'
-            className='w-full'
-          >
-            {isLoading ? 'Running...' : 'Run Diagnostics'}
-          </Button>
-          {apiResponse && (
-            <div className='rounded-xl border border-border/50 bg-muted/30 p-4'>
-              <pre className='overflow-x-auto font-mono text-xs text-muted-foreground'>
-                <code>{apiResponse}</code>
-              </pre>
-            </div>
-          )}
+    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-display-3 font-bold tracking-tight text-brand-navy lg:text-display-2">
+            Where Intelligence <br className="hidden sm:block" />
+            <span className="text-gradient">Meets Human.</span>
+          </h1>
+          <p className="mt-4 text-lg font-light text-muted-foreground">
+            Live view of the 90-day onboarding cohort — {summary?.total_hires ?? '—'} hires tracked, {summary?.open_workbench_items ?? '—'} awaiting review.
+          </p>
         </div>
-
-        <div className='h-px bg-border/50' />
-
-        <div className='space-y-3'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <p className='text-sm font-medium text-foreground'>
-                Admin Verification
-              </p>
-              <p className='mt-0.5 font-mono text-xs text-muted-foreground'>
-                /api/admin/dashboard
-              </p>
-            </div>
-          </div>
-          <Button
-            onClick={() => callApi('/api/admin/dashboard', setAdminResponse)}
-            disabled={isLoading}
-            variant='gradient'
-            className='w-full'
-          >
-            {isLoading ? 'Verifying...' : 'Verify Admin Access'}
-            <Icons.arrowRight className='ml-2 h-4 w-4' />
-          </Button>
-          {adminResponse && (
-            <div className='rounded-xl border border-border/50 bg-muted/30 p-4'>
-              <pre className='overflow-x-auto font-mono text-xs text-muted-foreground'>
-                <code>{adminResponse}</code>
-              </pre>
-            </div>
+        <Button variant="gradient" size="lg" onClick={handleRunOrchestrator} disabled={isRunning}>
+          {isRunning ? (
+            <><Icons.loader className="mr-2 h-4 w-4 animate-spin" />Running Orchestrator...</>
+          ) : (
+            <><Icons.zap className="mr-2 h-4 w-4" />Run Orchestrator</>
           )}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-// Main Dashboard — no auth required, renders directly
-export default function HomePage() {
-  return (
-    <motion.div
-      className='space-y-6'
-      variants={containerVariants}
-      initial='hidden'
-      animate='visible'
-    >
-      {/* Hero Section */}
-      <HeroSection userName='Developer' />
-
-      {/* Stats Grid - Bento style */}
-      <div className='grid grid-cols-2 gap-4 lg:grid-cols-4'>
-        <StatCard
-          title='Total Users'
-          value={10400}
-          icon={Icons.users}
-          trend={{ value: '+12%', positive: true }}
-          colorClass='bg-brand-navy'
-          delay={0.1}
-        />
-        <StatCard
-          title='Active Sessions'
-          value={524}
-          icon={Icons.activity}
-          trend={{ value: '+8%', positive: true }}
-          colorClass='bg-brand-cornflower'
-          delay={0.2}
-        />
-        <StatCard
-          title='Success Rate'
-          value={98}
-          suffix='%'
-          icon={Icons.checkCircle}
-          trend={{ value: '+2%', positive: true }}
-          colorClass='bg-brand-purple'
-          delay={0.3}
-        />
-        <StatCard
-          title='AI Confidence'
-          value={96}
-          suffix='%'
-          icon={Icons.sparkles}
-          trend={{ value: 'Stable', positive: true }}
-          colorClass='bg-gradient-to-br from-brand-navy to-brand-purple'
-          delay={0.4}
-        />
-      </div>
-
-      {/* Activity Chart - Full Width */}
-      <motion.div variants={itemVariants}>
-        <ActivityChart className='col-span-12' />
+        </Button>
       </motion.div>
 
-      {/* System Diagnostics */}
-      <motion.div
-        className='grid gap-6 lg:grid-cols-12'
-        variants={itemVariants}
-      >
-        <DiagnosticsCard />
+      {lastRunResult && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="rounded-lg border border-brand-cornflower/30 bg-brand-cornflower/10 p-4 text-sm text-brand-navy">
+          <span className="font-semibold">Run complete.</span> {lastRunResult.summary}
+        </motion.div>
+      )}
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard title="On Track" value={summary?.on_track_count ?? 0} icon={Icons.checkCircle} colorClass="bg-brand-cornflower" delay={0.1} />
+        <StatCard title="At Risk" value={summary?.at_risk_count ?? 0} icon={Icons.alertTriangle} colorClass="bg-amber-500" delay={0.15} />
+        <StatCard title="Escalated" value={summary?.escalated_count ?? 0} icon={Icons.alertCircle} colorClass="bg-red-500" delay={0.2} />
+        <StatCard title="Open Workbench Items" value={summary?.open_workbench_items ?? 0} icon={Icons.workbench} colorClass="bg-brand-navy" delay={0.25} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard title="Tasks Completion" value={summary?.tasks_completion_pct ?? 0} suffix="%" icon={Icons.barChart} colorClass="bg-gradient-to-br from-brand-navy to-brand-purple" delay={0.1} />
+        <StatCard title="Day-90 Retention" value={summary?.day90_retention_rate ?? 0} suffix="%" icon={Icons.trendingUp} colorClass="bg-emerald-500" delay={0.15} />
+        <StatCard title="Active Policies" value={summary?.active_policies ?? 0} icon={Icons.brain} colorClass="bg-brand-purple" delay={0.2} />
+        <StatCard title="Orchestrator Runs" value={summary?.total_runs ?? 0} icon={Icons.sparkles} colorClass="bg-brand-cornflower" delay={0.25} />
+      </div>
+
+      <motion.div variants={itemVariants} className="grid gap-6 lg:grid-cols-5">
+        <DashboardActivityChart points={activity?.points ?? []} className="lg:col-span-3" />
+        <div className="lg:col-span-2">
+          <CohortSnapshot hires={hires} limit={5} />
+        </div>
       </motion.div>
     </motion.div>
   )
