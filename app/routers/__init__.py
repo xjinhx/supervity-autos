@@ -18,6 +18,10 @@ from .orchestrator import router as orchestrator_router
 from .policies import router as policies_router
 from .workbench import router as workbench_router
 
+# Imported last: app.services.ai_chat reaches back into the dashboard/
+# policies/workbench routers, so those must already be fully imported above.
+from .ai_chat import router as ai_chat_router  # noqa: E402
+
 __all__ = [
     "health_router",
     "auth_router",
@@ -31,4 +35,5 @@ __all__ = [
     "dashboard_router",
     "integrations_router",
     "orchestrator_router",
+    "ai_chat_router",
 ]

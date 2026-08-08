@@ -145,6 +145,56 @@
   }
 }
 
+/* Auto (auto.supervity.ai) workflow-run step output — scoped styling for the
+   `ag-*` classes embedded in the HTML Auto returns per step, so it renders
+   legibly instead of as unstyled browser defaults. Auto's own CSS isn't
+   loaded here, so this only covers class names actually observed in
+   practice; unknown ag-* classes fall back to plain text. */
+.auto-run-output table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.auto-run-output td,
+.auto-run-output th {
+  padding: 0.25rem 0.5rem;
+  vertical-align: top;
+}
+.auto-run-output .ag-muted {
+  color: hsl(var(--muted-foreground));
+}
+.auto-run-output .ag-metric {
+  font-weight: 600;
+}
+.auto-run-output .ag-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.0625rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+.auto-run-output .ag-badge-success,
+.auto-run-output .ag-badge-healthy,
+.auto-run-output .ag-badge-ok {
+  background-color: rgb(209 250 229);
+  color: rgb(4 120 87);
+}
+.auto-run-output .ag-badge-warning {
+  background-color: rgb(254 243 199);
+  color: rgb(180 83 9);
+}
+.auto-run-output .ag-badge-error,
+.auto-run-output .ag-badge-danger,
+.auto-run-output .ag-badge-failed {
+  background-color: rgb(254 226 226);
+  color: rgb(185 28 28);
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *,

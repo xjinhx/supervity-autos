@@ -37,6 +37,7 @@ from .core.storage import GCSStorage, LocalStorage, StorageBackend
 from .middleware import AuditMiddleware
 from .routers import (
     admin_router,
+    ai_chat_router,
     audit_router,
     auth_router,
     dashboard_router,
@@ -177,6 +178,9 @@ api_router.include_router(integrations_router)
 
 # Command Center: Orchestrator run + hire endpoints
 api_router.include_router(orchestrator_router)
+
+# Command Center: AI Manager chat
+api_router.include_router(ai_chat_router)
 
 
 # =============================================================================

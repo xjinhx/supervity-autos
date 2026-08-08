@@ -9,6 +9,7 @@ httpx
 python-multipart
 email-validator
 openpyxl  # Excel export for audit logs
+anthropic  # AI Manager — grounded chat with tool use over the Command Center
 
 # Pin cryptography away from v48+. The 48.0.0 (May 2026) prebuilt
 # manylinux_2_34_aarch64 wheel uses ARM instructions that crash with SIGILL

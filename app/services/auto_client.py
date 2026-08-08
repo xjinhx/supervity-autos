@@ -8,10 +8,19 @@ run, in what order, is logic that lives inside the Orchestrator's own
 workflow definition on Auto's side — this client doesn't choose Operators,
 it triggers the Orchestrator and Auto's engine handles the rest.
 
+Uses the streaming (SSE) execute endpoint, not the blocking one. A real
+Orchestrator run takes longer than Cloudflare will hold a silent blocking
+connection open (confirmed in practice: the blocking /execute endpoint
+returns a Cloudflare 524 "origin timeout"). SSE keeps bytes flowing as
+Auto emits progress events, so the connection never goes quiet long enough
+to get killed. We consume the stream server-side and return the last event
+once it closes — same external contract as a blocking call, to the caller.
+
 Uses httpx (not requests) — bumping GUNICORN_TIMEOUT above this client's
 timeout is called out explicitly in .env.example for this reason.
 """
 
+import json
 import logging
 import os
 
@@ -20,9 +29,10 @@ from fastapi import HTTPException
 
 log = logging.getLogger(__name__)
 
-# Comfortably under the default GUNICORN_TIMEOUT=240 so the app can return a
-# clean "Run failed: timed out" instead of the worker being killed first.
-REQUEST_TIMEOUT = 200
+# Connect/write are generous but bounded; read is per-chunk (time between SSE
+# events), not total stream duration — so a long-but-active run won't time
+# out here as long as Auto keeps emitting events.
+REQUEST_TIMEOUT = httpx.Timeout(connect=10.0, read=200.0, write=30.0, pool=10.0)
 
 
 def trigger_orchestrator_run(
@@ -59,21 +69,40 @@ def trigger_orchestrator_run(
         "Authorization": f"Bearer {api_key}",
         "x-source": "external",
         "x-user-timezone": "Asia/Singapore",
+        "Accept": "text/event-stream",
     }
 
+    last_event: dict | None = None
     try:
-        resp = httpx.post(
-            api_base.rstrip("/") + "/api/v1/workflow-runs/execute",
+        with httpx.stream(
+            "POST",
+            api_base.rstrip("/") + "/api/v1/workflow-runs/execute/stream",
             headers=headers,
             # (None, value) tuples force true multipart/form-data encoding for
             # text-only fields — plain `data=` would send urlencoded instead.
             files={key: (None, value) for key, value in fields.items()},
             timeout=REQUEST_TIMEOUT,
-        )
+        ) as resp:
+            if resp.status_code >= 400:
+                body = resp.read()
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Auto orchestrator run failed: HTTP {resp.status_code} — {body.decode(errors='replace')}",
+                )
+            for line in resp.iter_lines():
+                if not line or not line.startswith("data:"):
+                    continue
+                payload = line[len("data:") :].strip()
+                if not payload:
+                    continue
+                try:
+                    last_event = json.loads(payload)
+                except ValueError:
+                    log.warning("Non-JSON SSE payload from Auto orchestrator stream: %s", payload)
     except httpx.RequestError as e:
         raise HTTPException(status_code=502, detail=f"Auto orchestrator request failed: {e}") from e
 
-    if resp.status_code >= 400:
-        raise HTTPException(status_code=502, detail=f"Auto orchestrator run failed: HTTP {resp.status_code} — {resp.text}")
+    if last_event is None:
+        raise HTTPException(status_code=502, detail="Auto orchestrator stream closed with no events")
 
-    return resp.json()
+    return last_event
