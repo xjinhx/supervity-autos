@@ -8,7 +8,6 @@ export interface AutoRunStep {
   stepDescription?: string
   status?: string
   outputs?: {
-    displayData?: { html?: string }
     output?: string
     error?: string
   }

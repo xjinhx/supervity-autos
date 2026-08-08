@@ -25,7 +25,6 @@ const STATUS_BADGE: Record<string, string> = {
 
 function StepCard({ step }: { step: AutoRunStep }) {
   const badgeClass = (step.status && STATUS_BADGE[step.status.toLowerCase()]) || 'bg-gray-100 text-gray-700'
-  const html = step.outputs?.displayData?.html
   return (
     <div className="rounded-lg border border-border/60 p-3">
       <div className="flex items-center justify-between gap-2">
@@ -37,11 +36,9 @@ function StepCard({ step }: { step: AutoRunStep }) {
         )}
       </div>
       {step.stepDescription && <p className="mt-0.5 text-xs text-muted-foreground">{step.stepDescription}</p>}
-      {html ? (
-        <div className="auto-run-output mt-2 text-sm" dangerouslySetInnerHTML={{ __html: html }} />
-      ) : step.outputs?.output ? (
+      {step.outputs?.output && (
         <pre className="mt-2 whitespace-pre-wrap break-words text-xs text-muted-foreground">{step.outputs.output}</pre>
-      ) : null}
+      )}
       {step.outputs?.error && <p className="mt-2 text-xs text-red-600">{step.outputs.error}</p>}
     </div>
   )
