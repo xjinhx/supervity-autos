@@ -77,11 +77,37 @@ def _check_onedrive() -> tuple[str, str]:
     return "healthy", "OneDrive app credentials configured."
 
 
+def _check_zoom() -> tuple[str, str]:
+    account_id = os.getenv("ZOOM_ACCOUNT_ID")
+    client_id = os.getenv("ZOOM_CLIENT_ID")
+    client_secret = os.getenv("ZOOM_CLIENT_SECRET")
+    if not account_id or not client_id or not client_secret:
+        return (
+            "degraded",
+            "ZOOM_ACCOUNT_ID / ZOOM_CLIENT_ID / ZOOM_CLIENT_SECRET not configured "
+            "— onboarding meeting checks inactive.",
+        )
+    try:
+        resp = requests.post(
+            "https://zoom.us/oauth/token",
+            params={"grant_type": "account_credentials", "account_id": account_id},
+            auth=(client_id, client_secret),
+            timeout=REQUEST_TIMEOUT,
+        )
+        data = resp.json()
+        if resp.ok and data.get("access_token"):
+            return "healthy", "Server-to-Server OAuth token issued successfully."
+        return "down", f"Zoom OAuth failed: {data.get('reason') or data.get('error') or resp.status_code}"
+    except Exception as e:  # noqa: BLE001
+        return "down", f"Zoom request failed: {e}"
+
+
 _CHECKS = {
     "Postgres (App DB)": ("system_of_record", "Hires, policies, workbench, insights, audit trail", lambda db: _check_postgres(db)),
     "Slack": ("channel", "Escalation + notification routing (#hr-disclosures, manager DMs)", lambda db: _check_slack()),
     "Auto (auto.supervity.ai)": ("orchestrator", "Orchestrator + 10 Operators — lead onboarding automation", lambda db: _check_auto_orchestrator()),
     "OneDrive": ("channel", "Onboarding document storage + sync", lambda db: _check_onedrive()),
+    "Zoom": ("channel", "Onboarding meeting scheduling + attendance checks", lambda db: _check_zoom()),
 }
 
 
