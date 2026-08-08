@@ -8,12 +8,9 @@ class DashboardSummary(BaseModel):
     total_hires: int
     on_track_count: int
     at_risk_count: int
-    escalated_count: int
     tasks_completion_pct: float
-    day90_retention_rate: float
-    open_workbench_items: int
+    recent_workbench_resolutions: int
     active_policies: int
-    total_runs: int
     last_run_at: datetime | None = None
 
 

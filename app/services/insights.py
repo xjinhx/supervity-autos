@@ -2,11 +2,11 @@
 """
 AI Insights generation.
 
-Computes observations from data the Orchestrator actually produced
-(`hires.risk_state`, `workbench_items`, `policies`) rather than returning
-hardcoded copy. Called by POST /api/insights/generate, and safe to call
-repeatedly — each call replaces the prior generated set so re-running after
-a new batch produces updated insights (PRD acceptance criterion).
+Computes observations from data the Operators actually produced in Supabase
+(`hire_risk_state` + `Workers`, `workbench_resolutions`) rather than
+returning hardcoded copy. Called by POST /api/insights/generate, and safe to
+call repeatedly — each call replaces the prior generated set (cached locally
+in `insights`) so re-running after a new batch produces updated insights.
 """
 
 import logging
@@ -14,30 +14,28 @@ from collections import Counter
 
 from sqlalchemy.orm import Session
 
-from ..models.hire import Hire
 from ..models.insight import Insight
-from ..models.policy import Policy
-from ..models.workbench import WorkbenchItem
+from . import supabase_client
 
 log = logging.getLogger(__name__)
 
 _CLUSTER_DIMENSIONS = [
-    ("location", "Location"),
-    ("job_family", "Job Family"),
-    ("manager", "Manager"),
+    ("Location", "Location"),
+    ("Job_Family", "Job Family"),
+    ("Manager_Name", "Manager"),
 ]
 
 
-def _risk_clustering_insights(db: Session) -> list[Insight]:
-    at_risk_hires = db.query(Hire).filter(Hire.risk_state.in_(["at_risk", "escalated"])).all()
-    if not at_risk_hires:
+def _risk_clustering_insights() -> list[Insight]:
+    at_risk_workers = supabase_client.list_at_risk_workers_joined()
+    if not at_risk_workers:
         return []
 
-    total = len(at_risk_hires)
+    total = len(at_risk_workers)
     insights: list[Insight] = []
 
     for field, label in _CLUSTER_DIMENSIONS:
-        counts = Counter(getattr(h, field) for h in at_risk_hires if getattr(h, field))
+        counts = Counter(w.get(field) for w in at_risk_workers if w.get(field))
         if not counts:
             continue
         top_value, top_count = counts.most_common(1)[0]
@@ -66,57 +64,29 @@ def _risk_clustering_insights(db: Session) -> list[Insight]:
     return insights
 
 
-def _automation_opportunity_insights(db: Session) -> list[Insight]:
-    approved = (
-        db.query(WorkbenchItem)
-        .filter(WorkbenchItem.status == "approved")
-        .all()
-    )
-    unmodified = [i for i in approved if not (i.resolution_notes and i.resolution_notes.strip())]
+def _automation_opportunity_insights() -> list[Insight]:
+    resolutions = supabase_client.list_workbench_resolutions(limit=500)
+    unmodified = [r for r in resolutions if not (r.get("reviewer_notes") and r["reviewer_notes"].strip())]
     if not unmodified:
         return []
 
-    counts = Counter((i.item_type, i.policy_id) for i in unmodified)
+    counts = Counter((r["item_type"], r["decision"]) for r in unmodified)
     insights: list[Insight] = []
-    for (item_type, policy_id), count in counts.items():
+    for (item_type, decision), count in counts.items():
         if count < 3:
             continue
-        policy_name = None
-        if policy_id:
-            policy = db.query(Policy).filter(Policy.id == policy_id).first()
-            policy_name = policy.name if policy else None
-        label = policy_name or item_type.replace("_", " ")
+        label = item_type.replace("_", " ")
         insights.append(
             Insight(
                 insight_type="recommendation",
                 severity="info",
                 title="Automation opportunity detected",
                 description=(
-                    f"{count} Workbench items for '{label}' were approved with no changes. "
-                    f"These cases could be auto-approved under the existing policy condition."
+                    f"{count} Workbench items for '{label}' were resolved as '{decision}' with no reviewer notes. "
+                    f"These cases could be auto-resolved instead of routed to Workbench."
                 ),
-                supporting_data={"item_type": item_type, "policy_id": str(policy_id) if policy_id else None, "count": count},
-                action_path=f"Consider auto-approving '{label}' cases instead of routing them to Workbench.",
-            )
-        )
-    return insights
-
-
-def _policy_review_insights(db: Session) -> list[Insight]:
-    flagged = db.query(Policy).filter(Policy.flagged_for_review.is_(True)).all()
-    insights: list[Insight] = []
-    for policy in flagged:
-        insights.append(
-            Insight(
-                insight_type="anomaly",
-                severity="warning",
-                title=f"Policy '{policy.name}' flagged for review",
-                description=(
-                    "Operators have manually modified this policy's recommendation 3+ times "
-                    "in the last 7 days — its threshold may no longer match reality."
-                ),
-                supporting_data={"policy_id": str(policy.id)},
-                action_path=f"Review and adjust the '{policy.name}' threshold in AI Policies.",
+                supporting_data={"item_type": item_type, "decision": decision, "count": count},
+                action_path=f"Consider auto-resolving '{label}' cases as '{decision}' instead of routing them to Workbench.",
             )
         )
     return insights
@@ -126,11 +96,7 @@ def generate_insights(db: Session) -> list[Insight]:
     # Replace the prior generated set so re-runs reflect the latest data.
     db.query(Insight).delete()
 
-    new_insights = (
-        _risk_clustering_insights(db)
-        + _automation_opportunity_insights(db)
-        + _policy_review_insights(db)
-    )
+    new_insights = _risk_clustering_insights() + _automation_opportunity_insights()
 
     for insight in new_insights:
         db.add(insight)

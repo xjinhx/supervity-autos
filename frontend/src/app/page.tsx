@@ -8,9 +8,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CardWatermark } from '@/components/ui/card-watermark'
 import { Icons } from '@/components/ui/icons'
 import { DashboardActivityChart } from '@/components/command-center/DashboardActivityChart'
-import { CohortSnapshot } from '@/components/command-center/CohortSnapshot'
+import { RunOrchestratorModal } from '@/components/command-center/RunOrchestratorModal'
 import { cn } from '@/lib/utils'
-import type { DashboardSummary, DashboardActivity, Hire, OrchestratorRunSummary } from '@/types/command-center'
+import type { DashboardSummary, DashboardActivity } from '@/types/command-center'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -79,35 +79,20 @@ function StatCard({ title, value, suffix = '', icon: Icon, colorClass, delay = 0
 export default function HomePage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [activity, setActivity] = useState<DashboardActivity | null>(null)
-  const [hires, setHires] = useState<Hire[]>([])
-  const [isRunning, setIsRunning] = useState(false)
-  const [lastRunResult, setLastRunResult] = useState<OrchestratorRunSummary | null>(null)
+  const [runModalOpen, setRunModalOpen] = useState(false)
 
   const loadAll = useCallback(async () => {
-    const [summaryData, activityData, hiresData] = await Promise.all([
+    const [summaryData, activityData] = await Promise.all([
       apiClient.get<DashboardSummary>('/api/dashboard/summary'),
       apiClient.get<DashboardActivity>('/api/dashboard/activity?days=14'),
-      apiClient.get<Hire[]>('/api/orchestrator/hires'),
     ])
     setSummary(summaryData)
     setActivity(activityData)
-    setHires(hiresData)
   }, [])
 
   useEffect(() => {
     loadAll()
   }, [loadAll])
-
-  const handleRunOrchestrator = async () => {
-    setIsRunning(true)
-    try {
-      const result = await apiClient.post<OrchestratorRunSummary>('/api/orchestrator/simulate-run')
-      setLastRunResult(result)
-      await loadAll()
-    } finally {
-      setIsRunning(false)
-    }
-  }
 
   return (
     <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
@@ -118,44 +103,35 @@ export default function HomePage() {
             <span className="text-gradient">Meets Human.</span>
           </h1>
           <p className="mt-4 text-lg font-light text-muted-foreground">
-            Live view of the 90-day onboarding cohort — {summary?.total_hires ?? '—'} hires tracked, {summary?.open_workbench_items ?? '—'} awaiting review.
+            Live view of the 90-day onboarding cohort — {summary?.total_hires ?? '—'} hires tracked, {summary?.recent_workbench_resolutions ?? '—'} resolved this week.
           </p>
         </div>
-        <Button variant="gradient" size="lg" onClick={handleRunOrchestrator} disabled={isRunning}>
-          {isRunning ? (
-            <><Icons.loader className="mr-2 h-4 w-4 animate-spin" />Running Orchestrator...</>
-          ) : (
-            <><Icons.zap className="mr-2 h-4 w-4" />Run Orchestrator</>
-          )}
+        <Button variant="gradient" size="lg" onClick={() => setRunModalOpen(true)}>
+          <Icons.zap className="mr-2 h-4 w-4" />
+          Run Orchestrator
         </Button>
       </motion.div>
-
-      {lastRunResult && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="rounded-lg border border-brand-cornflower/30 bg-brand-cornflower/10 p-4 text-sm text-brand-navy">
-          <span className="font-semibold">Run complete.</span> {lastRunResult.summary}
-        </motion.div>
-      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard title="On Track" value={summary?.on_track_count ?? 0} icon={Icons.checkCircle} colorClass="bg-brand-cornflower" delay={0.1} />
         <StatCard title="At Risk" value={summary?.at_risk_count ?? 0} icon={Icons.alertTriangle} colorClass="bg-amber-500" delay={0.15} />
-        <StatCard title="Escalated" value={summary?.escalated_count ?? 0} icon={Icons.alertCircle} colorClass="bg-red-500" delay={0.2} />
-        <StatCard title="Open Workbench Items" value={summary?.open_workbench_items ?? 0} icon={Icons.workbench} colorClass="bg-brand-navy" delay={0.25} />
+        <StatCard title="Tasks Completion" value={summary?.tasks_completion_pct ?? 0} suffix="%" icon={Icons.barChart} colorClass="bg-gradient-to-br from-brand-navy to-brand-purple" delay={0.2} />
+        <StatCard title="Recent Workbench Resolutions" value={summary?.recent_workbench_resolutions ?? 0} icon={Icons.workbench} colorClass="bg-brand-navy" delay={0.25} />
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard title="Tasks Completion" value={summary?.tasks_completion_pct ?? 0} suffix="%" icon={Icons.barChart} colorClass="bg-gradient-to-br from-brand-navy to-brand-purple" delay={0.1} />
-        <StatCard title="Day-90 Retention" value={summary?.day90_retention_rate ?? 0} suffix="%" icon={Icons.trendingUp} colorClass="bg-emerald-500" delay={0.15} />
-        <StatCard title="Active Policies" value={summary?.active_policies ?? 0} icon={Icons.brain} colorClass="bg-brand-purple" delay={0.2} />
-        <StatCard title="Orchestrator Runs" value={summary?.total_runs ?? 0} icon={Icons.sparkles} colorClass="bg-brand-cornflower" delay={0.25} />
+        <StatCard title="Active Policies" value={summary?.active_policies ?? 0} icon={Icons.brain} colorClass="bg-brand-purple" delay={0.1} />
       </div>
 
-      <motion.div variants={itemVariants} className="grid gap-6 lg:grid-cols-5">
-        <DashboardActivityChart points={activity?.points ?? []} className="lg:col-span-3" />
-        <div className="lg:col-span-2">
-          <CohortSnapshot hires={hires} limit={5} />
-        </div>
+      <motion.div variants={itemVariants}>
+        <DashboardActivityChart points={activity?.points ?? []} />
       </motion.div>
+
+      <RunOrchestratorModal
+        open={runModalOpen}
+        onClose={() => setRunModalOpen(false)}
+        onRunComplete={loadAll}
+      />
     </motion.div>
   )
 }
