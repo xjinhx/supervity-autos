@@ -28,9 +28,9 @@ AUTH_BYPASS = os.getenv("AUTH_BYPASS", "false").lower() == "true"
 # Dev-mode auth bypass user (returned when AUTH_BYPASS=true)
 _BYPASS_USER = {
     "sub": "dev-user-001",
-    "email": "developer@autopilot.local",
-    "name": "Dev User",
-    "preferred_username": "dev-user",
+    "email": "xjinhx@gmail.com",
+    "name": "Jinhong",
+    "preferred_username": "jinhong",
     "realm_access": {"roles": ["admin", "user"]},
     "active": True,
 }

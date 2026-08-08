@@ -76,24 +76,24 @@ export function DashboardActivityChart({ points, className }: DashboardActivityC
               <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gradientEval" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#8AA2DF" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#8AA2DF" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#10B981" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gradientFired" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#535EA4" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#535EA4" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#0F766E" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#0F766E" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gradientEsc" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#D97706" stopOpacity={0.35} />
                     <stop offset="95%" stopColor="#D97706" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(20, 26, 66, 0.06)" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#848EAA', fontSize: 11, fontWeight: 500 }} dy={8} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#848EAA', fontSize: 11 }} allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(19, 36, 32, 0.06)" vertical={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64766C', fontSize: 11, fontWeight: 500 }} dy={8} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64766C', fontSize: 11 }} allowDecimals={false} />
                 <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="Evaluations" stroke="#8AA2DF" strokeWidth={2.5} fill="url(#gradientEval)" dot={false} />
-                <Area type="monotone" dataKey="Fired" stroke="#535EA4" strokeWidth={2} fill="url(#gradientFired)" dot={false} />
+                <Area type="monotone" dataKey="Evaluations" stroke="#10B981" strokeWidth={2.5} fill="url(#gradientEval)" dot={false} />
+                <Area type="monotone" dataKey="Fired" stroke="#0F766E" strokeWidth={2} fill="url(#gradientFired)" dot={false} />
                 <Area type="monotone" dataKey="Escalations" stroke="#D97706" strokeWidth={2} fill="url(#gradientEsc)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>

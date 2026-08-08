@@ -72,7 +72,7 @@ log.info(f"API Base Path: '{BASE_PATH}' (empty means root)")
 # =============================================================================
 
 app = FastAPI(
-    title="AutoPilot API",
+    title="PulseWise API",
     description="AI Command Center — Full-stack template with FastAPI, Next.js, and PostgreSQL",
     version="2.0.0",
     docs_url=f"{BASE_PATH}/api/docs",
@@ -258,7 +258,7 @@ app.include_router(api_router)
 async def root():
     """Root endpoint - API information."""
     return {
-        "name": "AutoPilot API",
+        "name": "PulseWise API",
         "version": "2.0.0",
         "docs": f"{BASE_PATH}/api/docs",
         "health": f"{BASE_PATH}/api/health",
@@ -273,7 +273,7 @@ if BASE_PATH:
     async def base_path_root():
         """Base path root endpoint - API information."""
         return {
-            "name": "AutoPilot API",
+            "name": "PulseWise API",
             "version": "2.0.0",
             "docs": f"{BASE_PATH}/api/docs",
             "health": f"{BASE_PATH}/api/health",

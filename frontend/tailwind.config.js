@@ -66,25 +66,25 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Brand Palette for manual usage
+        // Brand Palette for manual usage — "Emerald Slate"
         brand: {
-          black: "#04060A",
-          navy: "#141A42",
-          cornflower: "#8AA2DF",
-          muted: "#848EAA",
-          purple: "#535EA4",
-          light: "#E7E7E7",
+          black: "#05100C",
+          navy: "#132420",
+          cornflower: "#10B981",
+          muted: "#64766C",
+          purple: "#0F766E",
+          light: "#E3E9E5",
           // Additional shades for UI
-          "navy-light": "#1E2654",
-          "cornflower-light": "#A8BCEB",
+          "navy-light": "#1C3329",
+          "cornflower-light": "#6EE7B7",
         }
       },
       // Background gradients
       backgroundImage: {
-        'brand-gradient': 'linear-gradient(135deg, #141A42 0%, #535EA4 100%)',
-        'brand-mesh': 'radial-gradient(at 0% 0%, #535EA4 0px, transparent 50%), radial-gradient(at 100% 100%, #141A42 0px, transparent 50%)',
+        'brand-gradient': 'linear-gradient(135deg, #132420 0%, #0F766E 100%)',
+        'brand-mesh': 'radial-gradient(at 0% 0%, #0F766E 0px, transparent 50%), radial-gradient(at 100% 100%, #132420 0px, transparent 50%)',
         'glass-gradient': 'linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
-        'glaze': 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%)',
+        'glaze': 'linear-gradient(180deg, #FFFFFF 0%, #F6FBF8 100%)',
         'shimmer': 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
       },
       // Modern shadow system: strokes + glows instead of heavy shadows
@@ -92,10 +92,10 @@ module.exports = {
         'none': 'none',
         // Glass effect: inner highlight + subtle border
         'glass': 'inset 0 1px 0 0 rgba(255,255,255,0.8), 0 0 0 1px rgba(0,0,0,0.03)',
-        'glass-hover': 'inset 0 1px 0 0 rgba(255,255,255,0.9), 0 0 0 1px rgba(138,162,223,0.3)',
+        'glass-hover': 'inset 0 1px 0 0 rgba(255,255,255,0.9), 0 0 0 1px rgba(16,185,129,0.3)',
         // Accent glow for interactive elements
-        'accent': '0 0 0 1px rgba(138,162,223,0.3), 0 0 20px -5px rgba(138,162,223,0.15)',
-        'accent-strong': '0 0 0 1px rgba(138,162,223,0.5), 0 0 30px -5px rgba(138,162,223,0.25)',
+        'accent': '0 0 0 1px rgba(16,185,129,0.3), 0 0 20px -5px rgba(16,185,129,0.15)',
+        'accent-strong': '0 0 0 1px rgba(16,185,129,0.5), 0 0 30px -5px rgba(16,185,129,0.25)',
         // Floating elevation for detached elements
         'float': '0 8px 30px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03)',
         'float-lg': '0 12px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)',

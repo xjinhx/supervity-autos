@@ -131,7 +131,7 @@ function AIManagerTrigger() {
 
 // User menu with dropdown
 function UserMenu() {
-  const user = { name: 'Dev User', email: 'dev@autopilot.local' }
+  const user = { name: 'Jinhong', email: 'xjinhx@gmail.com' }
 
   return (
     <DropdownMenu>

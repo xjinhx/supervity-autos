@@ -94,7 +94,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             </div>
             <div className='flex flex-col'>
               <SheetTitle className='font-display text-lg font-bold tracking-tight text-brand-navy'>
-                AutoPilot
+                PulseWise
               </SheetTitle>
               <span className='text-[10px] font-medium uppercase tracking-widest text-brand-muted'>
                 Command Center

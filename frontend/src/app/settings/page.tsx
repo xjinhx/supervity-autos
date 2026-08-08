@@ -130,7 +130,7 @@ export default function SettingsPage() {
                   {session?.user?.email}
                 </p>
                 <p className='mt-1 text-xs text-muted-foreground'>
-                  AutoPilot Developer
+                  PulseWise Developer
                 </p>
               </div>
               <Button variant='outline'>

@@ -163,8 +163,8 @@ export function ActivityChart({
                   x2='0'
                   y2='1'
                 >
-                  <stop offset='0%' stopColor='#5B8DEF' stopOpacity={0.4} />
-                  <stop offset='95%' stopColor='#5B8DEF' stopOpacity={0} />
+                  <stop offset='0%' stopColor='#10B981' stopOpacity={0.4} />
+                  <stop offset='95%' stopColor='#10B981' stopOpacity={0} />
                 </linearGradient>
                 {/* Gradient for Success */}
                 <linearGradient
@@ -174,19 +174,19 @@ export function ActivityChart({
                   x2='0'
                   y2='1'
                 >
-                  <stop offset='0%' stopColor='#7C5CE7' stopOpacity={0.3} />
-                  <stop offset='95%' stopColor='#7C5CE7' stopOpacity={0} />
+                  <stop offset='0%' stopColor='#0F766E' stopOpacity={0.3} />
+                  <stop offset='95%' stopColor='#0F766E' stopOpacity={0} />
                 </linearGradient>
                 {/* Gradient for AI Calls */}
                 <linearGradient id='gradientAI' x1='0' y1='0' x2='0' y2='1'>
-                  <stop offset='0%' stopColor='#141A42' stopOpacity={0.2} />
-                  <stop offset='95%' stopColor='#141A42' stopOpacity={0} />
+                  <stop offset='0%' stopColor='#132420' stopOpacity={0.2} />
+                  <stop offset='95%' stopColor='#132420' stopOpacity={0} />
                 </linearGradient>
               </defs>
 
               <CartesianGrid
                 strokeDasharray='3 3'
-                stroke='rgba(20, 26, 66, 0.06)'
+                stroke='rgba(19, 36, 32, 0.06)'
                 vertical={false}
               />
 
@@ -195,7 +195,7 @@ export function ActivityChart({
                 axisLine={false}
                 tickLine={false}
                 tick={{
-                  fill: '#7B8AB8',
+                  fill: '#64766C',
                   fontSize: 11,
                   fontWeight: 500,
                 }}
@@ -206,7 +206,7 @@ export function ActivityChart({
                 axisLine={false}
                 tickLine={false}
                 tick={{
-                  fill: '#7B8AB8',
+                  fill: '#64766C',
                   fontSize: 11,
                 }}
                 tickFormatter={(value) =>
@@ -221,13 +221,13 @@ export function ActivityChart({
                 type='monotone'
                 dataKey='aiCalls'
                 name='AI Calls'
-                stroke='#141A42'
+                stroke='#132420'
                 strokeWidth={1.5}
                 fill='url(#gradientAI)'
                 dot={false}
                 activeDot={{
                   r: 4,
-                  fill: '#141A42',
+                  fill: '#132420',
                   stroke: '#fff',
                   strokeWidth: 2,
                 }}
@@ -238,13 +238,13 @@ export function ActivityChart({
                 type='monotone'
                 dataKey='success'
                 name='Success'
-                stroke='#7C5CE7'
+                stroke='#0F766E'
                 strokeWidth={2}
                 fill='url(#gradientSuccess)'
                 dot={false}
                 activeDot={{
                   r: 5,
-                  fill: '#7C5CE7',
+                  fill: '#0F766E',
                   stroke: '#fff',
                   strokeWidth: 2,
                 }}
@@ -255,13 +255,13 @@ export function ActivityChart({
                 type='monotone'
                 dataKey='sessions'
                 name='Sessions'
-                stroke='#5B8DEF'
+                stroke='#10B981'
                 strokeWidth={2.5}
                 fill='url(#gradientSessions)'
                 dot={false}
                 activeDot={{
                   r: 6,
-                  fill: '#5B8DEF',
+                  fill: '#10B981',
                   stroke: '#fff',
                   strokeWidth: 2,
                 }}

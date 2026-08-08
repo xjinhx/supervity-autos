@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 import type { RiskState } from './RiskBadge'
 
 const RING_COLOR: Record<RiskState, string> = {
-  on_track: '#8AA2DF', // brand-cornflower
+  on_track: '#10B981', // brand-cornflower
   at_risk: '#D97706', // amber-600
   escalated: '#DC2626', // red-600
 }
@@ -37,7 +37,7 @@ export function ProgressRing({
   return (
     <div className={cn('relative inline-flex items-center justify-center', className)} style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(20,26,66,0.08)" strokeWidth={strokeWidth} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(19,36,32,0.08)" strokeWidth={strokeWidth} />
         <circle
           cx={size / 2}
           cy={size / 2}

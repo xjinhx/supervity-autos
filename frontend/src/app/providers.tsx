@@ -13,8 +13,8 @@ const mockSession: {
   expires: string
 } = {
   user: {
-    name: 'Dev User',
-    email: 'dev@autopilot.local',
+    name: 'Jinhong',
+    email: 'xjinhx@gmail.com',
   },
   roles: ['admin', 'user'],
   expires: '2099-12-31T23:59:59.999Z',

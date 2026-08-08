@@ -8,15 +8,15 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
-      id: 'autopilot-dev',
-      name: 'AutoPilot Dev',
+      id: 'pulsewise-dev',
+      name: 'PulseWise Dev',
       credentials: {},
       async authorize() {
         // Auto-authenticate as Dev User — no real credentials needed
         return {
           id: 'dev-user-001',
-          name: 'Dev User',
-          email: 'dev@autopilot.local',
+          name: 'Jinhong',
+          email: 'xjinhx@gmail.com',
         }
       },
     }),

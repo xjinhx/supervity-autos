@@ -13,7 +13,7 @@ interface LogomarkProps {
 }
 
 /**
- * The AutoPilot "S" logomark.
+ * The PulseWise pulse-mark.
  * Use `variant="dark"` on light backgrounds, `variant="light"` on dark backgrounds.
  */
 export function Logomark({
@@ -29,7 +29,7 @@ export function Logomark({
   return (
     <Image
       src={src}
-      alt='AutoPilot'
+      alt='PulseWise'
       width={size}
       height={size}
       className={cn('shrink-0', className)}
