@@ -54,21 +54,19 @@ def _check_slack() -> tuple[str, str]:
 
 
 def _check_auto_orchestrator() -> tuple[str, str]:
-    base_url = os.getenv("AUTO_API_BASE_URL")
-    api_key = os.getenv("AUTO_API_KEY")
-    if not base_url or not api_key:
-        return "degraded", "AUTO_API_BASE_URL / AUTO_API_KEY not configured — Orchestrator webhook not verified."
-    try:
-        resp = requests.get(
-            base_url.rstrip("/") + "/health",
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=REQUEST_TIMEOUT,
+    base_url = os.getenv("AUTO_WORKFLOW_API_BASE")
+    api_key = os.getenv("SUPERVITY_API_KEY")
+    workflow_id = os.getenv("AUTO_ORCHESTRATOR_WORKFLOW_ID")
+    if not base_url or not api_key or not workflow_id:
+        return (
+            "degraded",
+            "AUTO_WORKFLOW_API_BASE / SUPERVITY_API_KEY / AUTO_ORCHESTRATOR_WORKFLOW_ID not fully configured "
+            "— Run Orchestrator is inactive.",
         )
-        if resp.ok:
-            return "healthy", "Auto orchestration endpoint reachable."
-        return "degraded", f"Auto endpoint returned HTTP {resp.status_code}."
-    except Exception as e:  # noqa: BLE001
-        return "down", f"Auto endpoint unreachable: {e}"
+    # Auto's confirmed API surface only exposes the run-execution endpoint —
+    # there's no lightweight health endpoint, and hitting /execute here would
+    # trigger a real Orchestrator run. Report configured, not live-verified.
+    return "healthy", "Orchestrator credentials configured (not live-verified — no safe health endpoint to ping)."
 
 
 def _check_onedrive() -> tuple[str, str]:

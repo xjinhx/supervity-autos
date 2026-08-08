@@ -1,5 +1,5 @@
 # Makefile — AutoPilot Template
-.PHONY: help up down logs-be logs-fe reset-db seed-cc migrate-create migrate-up migrate-down migrate-history format lint test-be
+.PHONY: help up down logs-be logs-fe reset-db migrate-create migrate-up migrate-down migrate-history format lint test-be
 
 help:
 	@echo "╔════════════════════════════════════════════════════════════════════╗"
@@ -43,13 +43,7 @@ reset-db:
 	docker-compose exec backend python scripts/reset_db.py
 	@echo "🌱 Seeding database with initial data..."
 	docker-compose exec backend python scripts/seed_db.py
-	@echo "🌱 Seeding Command Center data (hires, policies, integrations)..."
-	docker-compose exec backend python scripts/seed_command_center.py
 	@echo "✅ Database reset complete!"
-
-seed-cc:
-	@echo "🌱 Seeding Command Center data (hires, policies, integrations)..."
-	docker-compose exec backend python scripts/seed_command_center.py
 
 migrate-create:
 	@if [ -z "$(MSG)" ]; then \

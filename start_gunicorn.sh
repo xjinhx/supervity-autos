@@ -80,10 +80,6 @@ except Exception as e:
     alembic upgrade head
     echo "✅ Migrations up to date!"
 
-    # Command Center demo data - idempotent (skips tables that already have rows)
-    echo "🌱 Ensuring Command Center demo data..."
-    python scripts/seed_command_center.py || echo "⚠️  Command Center seed skipped/failed (non-fatal)"
-
     echo "🏭 Starting production server with dynamic workers..."
     exec gunicorn -c gunicorn/prod.py app.main:app
     
@@ -97,10 +93,6 @@ else
     # Run database migrations (safe in dev - single worker)
     echo "📄 Running database migrations..."
     alembic upgrade head
-
-    # Command Center demo data - idempotent (skips tables that already have rows)
-    echo "🌱 Ensuring Command Center demo data..."
-    python scripts/seed_command_center.py || echo "⚠️  Command Center seed skipped/failed (non-fatal)"
 
     echo "🛠️  Starting development server..."
     exec gunicorn -c gunicorn/dev.py app.main:app
