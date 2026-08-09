@@ -6,6 +6,7 @@ import { Command } from 'cmdk'
 import { cn } from '@/lib/utils'
 import { Icons } from '@/components/ui/icons'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { useAI } from '@/context/AIContext'
 
 interface CommandPaletteProps {
   open?: boolean
@@ -19,7 +20,7 @@ const recentItems = [
     id: 'recent-2',
     label: 'Run Diagnostics',
     icon: Icons.activity,
-    action: 'diagnostics',
+    href: '/data-manager',
   },
 ]
 
@@ -66,16 +67,10 @@ const navigationItems = [
 // Action items
 const actionItems = [
   {
-    id: 'new-task',
-    label: 'Create New Task',
-    icon: Icons.plus,
-    action: 'new-task',
-  },
-  {
     id: 'run-diagnostics',
     label: 'Run Diagnostics',
     icon: Icons.activity,
-    action: 'diagnostics',
+    href: '/data-manager',
   },
   {
     id: 'refresh',
@@ -118,6 +113,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const [search, setSearch] = React.useState('')
   const debouncedSearch = useDebounce(search, 150)
   const router = useRouter()
+  const { openManager } = useAI()
   const inputRef = React.useRef<HTMLInputElement>(null)
 
   const controlledOpen = open !== undefined ? open : isOpen
@@ -161,11 +157,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         case 'refresh':
           window.location.reload()
           break
-        case 'diagnostics':
-          // TODO: Implement diagnostics action
-          break
         case 'help':
-          // TODO: Implement help action
+          openManager()
           break
       }
     }

@@ -1,7 +1,9 @@
 'use client'
 
 import * as React from 'react'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { apiClient } from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
 import { Icons } from '@/components/ui/icons'
 import {
@@ -9,8 +11,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import type { Insight, WorkbenchResolution } from '@/types/command-center'
 
-// Notification types
+const READ_IDS_STORAGE_KEY = 'notification-read-ids'
+const MAX_NOTIFICATIONS = 8
+
 type NotificationType = 'info' | 'success' | 'warning' | 'error'
 
 interface Notification {
@@ -22,33 +27,52 @@ interface Notification {
   read: boolean
 }
 
-// Mock notifications - in real app, this would come from a store/API
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
+function loadReadIds(): Set<string> {
+  try {
+    const raw = window.localStorage.getItem(READ_IDS_STORAGE_KEY)
+    return raw ? new Set(JSON.parse(raw)) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+function saveReadIds(ids: Set<string>) {
+  try {
+    window.localStorage.setItem(READ_IDS_STORAGE_KEY, JSON.stringify([...ids]))
+  } catch {
+    // localStorage unavailable — read state just won't persist across reloads
+  }
+}
+
+const SEVERITY_TO_TYPE: Record<string, NotificationType> = {
+  critical: 'error',
+  warning: 'warning',
+  info: 'info',
+}
+
+function buildNotifications(insights: Insight[], resolutions: WorkbenchResolution[], readIds: Set<string>): Notification[] {
+  const fromInsights: Notification[] = insights.map((insight) => ({
+    id: `insight-${insight.id}`,
+    type: SEVERITY_TO_TYPE[insight.severity] ?? 'info',
+    title: insight.title,
+    message: insight.description,
+    timestamp: new Date(insight.generated_at),
+    read: readIds.has(`insight-${insight.id}`),
+  }))
+
+  const fromResolutions: Notification[] = resolutions.map((r) => ({
+    id: `workbench-${r.resolution_id}`,
     type: 'success',
-    title: 'Diagnostics Complete',
-    message: 'All systems are running normally.',
-    timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 min ago
-    read: false,
-  },
-  {
-    id: '2',
-    type: 'info',
-    title: 'New Feature Available',
-    message: 'Check out the new workbench improvements.',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 min ago
-    read: false,
-  },
-  {
-    id: '3',
-    type: 'warning',
-    title: 'Token Expiring Soon',
-    message: 'Your access token will expire in 24 hours.',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    read: true,
-  },
-]
+    title: `${r.item_type.replace(/_/g, ' ')} resolved`,
+    message: r.reviewer_notes?.trim() ? `${r.decision} — ${r.reviewer_notes}` : `Decision: ${r.decision}`,
+    timestamp: new Date(r.resolved_at),
+    read: readIds.has(`workbench-${r.resolution_id}`),
+  }))
+
+  return [...fromInsights, ...fromResolutions]
+    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    .slice(0, MAX_NOTIFICATIONS)
+}
 
 const typeConfig: Record<
   NotificationType,
@@ -140,18 +164,47 @@ function NotificationItem({
 }
 
 export function NotificationCenter() {
-  const [notifications, setNotifications] = React.useState(mockNotifications)
+  const router = useRouter()
+  const [notifications, setNotifications] = React.useState<Notification[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const [insights, resolutions] = await Promise.all([
+          apiClient.get<Insight[]>('/api/insights'),
+          apiClient.get<WorkbenchResolution[]>('/api/workbench?limit=10'),
+        ])
+        if (cancelled) return
+        setNotifications(buildNotifications(insights, resolutions, loadReadIds()))
+      } catch {
+        if (!cancelled) setNotifications([])
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
   const markAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    )
+    setNotifications((prev) => {
+      const next = prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      saveReadIds(new Set(next.filter((n) => n.read).map((n) => n.id)))
+      return next
+    })
   }
 
   const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    setNotifications((prev) => {
+      const next = prev.map((n) => ({ ...n, read: true }))
+      saveReadIds(new Set(next.map((n) => n.id)))
+      return next
+    })
   }
 
   return (
@@ -198,7 +251,11 @@ export function NotificationCenter() {
 
         {/* Notification list */}
         <div className='max-h-[300px] overflow-y-auto p-2'>
-          {notifications.length === 0 ? (
+          {isLoading ? (
+            <div className='flex items-center justify-center py-8'>
+              <Icons.loader className='h-5 w-5 animate-spin text-muted-foreground' />
+            </div>
+          ) : notifications.length === 0 ? (
             <div className='py-8 text-center'>
               <div className='mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50'>
                 <Icons.checkCircle className='h-6 w-6 text-muted-foreground' />
@@ -229,8 +286,9 @@ export function NotificationCenter() {
             <Button
               variant='ghost'
               className='w-full text-brand-navy'
+              onClick={() => router.push('/ai/insights')}
             >
-              View all notifications
+              View all insights
             </Button>
           </div>
         )}
@@ -238,4 +296,3 @@ export function NotificationCenter() {
     </Popover>
   )
 }
-

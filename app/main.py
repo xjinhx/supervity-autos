@@ -13,9 +13,7 @@ All endpoint logic has been organized into routers:
 - routers/health.py - Health checks
 - routers/auth.py - Authentication & registration
 - routers/admin.py - Admin user management & settings
-- routers/items.py - Item CRUD operations
 - routers/audit.py - Audit log viewing & export
-- routers/examples.py - Authorization pattern examples
 
 AUDIT SYSTEM:
 - Every API request is automatically logged via AuditMiddleware
@@ -41,11 +39,9 @@ from .routers import (
     audit_router,
     auth_router,
     dashboard_router,
-    examples_router,
     health_router,
     insights_router,
     integrations_router,
-    items_router,
     orchestrator_router,
     policies_router,
     workbench_router,
@@ -154,12 +150,6 @@ api_router.include_router(admin_router)
 
 # Audit logs (admin only)
 api_router.include_router(audit_router)
-
-# Item CRUD operations
-api_router.include_router(items_router)
-
-# Authorization pattern examples
-api_router.include_router(examples_router)
 
 # Command Center: AI Policies engine
 api_router.include_router(policies_router)
