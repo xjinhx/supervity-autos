@@ -130,7 +130,6 @@ export default function HomePage() {
       <RunOrchestratorModal
         open={runModalOpen}
         onClose={() => setRunModalOpen(false)}
-        onRunComplete={loadAll}
       />
     </motion.div>
   )

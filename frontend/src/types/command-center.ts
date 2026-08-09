@@ -91,6 +91,28 @@ export interface OrchestratorRunRequest {
   normal_category_labels?: string
 }
 
-// Passed through from Auto's own API response — shape isn't fully known/owned
-// by this app, so this stays permissive rather than over-constrained.
-export type OrchestratorRunResult = Record<string, unknown>
+export interface OrchestratorRunStarted {
+  run_id: string
+}
+
+export interface OrchestratorStep {
+  id?: string
+  stepName?: string
+  stepDescription?: string
+  status?: string
+  outputs?: {
+    output?: string
+    error?: string
+  }
+}
+
+// Mirrors app/services/orchestrator_runs.py. `result` is passed through from
+// Auto's own API response — shape isn't fully known/owned by this app, so it
+// stays permissive rather than over-constrained.
+export interface OrchestratorRunStatus {
+  status: 'running' | 'completed' | 'failed'
+  current_step: OrchestratorStep | null
+  steps: OrchestratorStep[]
+  result: Record<string, unknown> | null
+  error: string | null
+}

@@ -1,12 +1,14 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { apiClient } from '@/lib/api-client'
 import { Card, CardContent } from '@/components/ui/card'
 import { CardWatermark } from '@/components/ui/card-watermark'
 import { Icons } from '@/components/ui/icons'
 import { WorkbenchItemCard } from '@/components/command-center/workbench/WorkbenchItemCard'
+import { OrchestratorRunStatusBanner } from '@/components/command-center/workbench/OrchestratorRunStatusBanner'
 import type { WorkbenchResolution } from '@/types/command-center'
 
 const containerVariants = {
@@ -18,7 +20,9 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
-export default function WorkbenchPage() {
+function WorkbenchContent() {
+  const searchParams = useSearchParams()
+  const runId = searchParams.get('run')
   const [items, setItems] = useState<WorkbenchResolution[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -47,6 +51,12 @@ export default function WorkbenchPage() {
         </p>
       </motion.div>
 
+      {runId && (
+        <motion.div variants={itemVariants}>
+          <OrchestratorRunStatusBanner runId={runId} onComplete={loadItems} />
+        </motion.div>
+      )}
+
       <motion.div variants={itemVariants} className="space-y-3">
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
@@ -74,5 +84,13 @@ export default function WorkbenchPage() {
         )}
       </motion.div>
     </motion.div>
+  )
+}
+
+export default function WorkbenchPage() {
+  return (
+    <Suspense fallback={null}>
+      <WorkbenchContent />
+    </Suspense>
   )
 }
