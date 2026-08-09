@@ -28,6 +28,7 @@ router = APIRouter(prefix="/orchestrator", tags=["Orchestrator"])
 
 @router.post("/run")
 def run_orchestrator(payload: OrchestratorRunRequest, background_tasks: BackgroundTasks):
+    log.info("Received orchestrator run request: %s", payload.model_dump())
     run_id = orchestrator_runs.create_run()
     background_tasks.add_task(
         auto_client.run_orchestrator_streaming,

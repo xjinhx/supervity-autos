@@ -74,6 +74,7 @@ def _build_request(
     }
     if employee_id:
         fields["inputs[employee_id]"] = employee_id
+    log.info("Triggering Auto orchestrator run with fields: %s", fields)
 
     headers = {
         "Authorization": f"Bearer {api_key}",

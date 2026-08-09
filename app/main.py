@@ -31,6 +31,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 
 from .authz import AuthzEngine
+from .core.logging_config import setup_logging
 from .core.storage import GCSStorage, LocalStorage, StorageBackend
 from .middleware import AuditMiddleware
 from .routers import (
@@ -48,6 +49,7 @@ from .routers import (
 )
 from .security import get_current_user, verify_access
 
+setup_logging()
 log = logging.getLogger(__name__)
 
 # =============================================================================
