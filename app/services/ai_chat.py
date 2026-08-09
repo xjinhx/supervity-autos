@@ -22,6 +22,8 @@ from ..routers import dashboard as dashboard_router
 from ..routers import policies as policies_router
 from ..routers import workbench as workbench_router
 from ..schemas.insight import Insight as InsightSchema
+from ..schemas.policy import PolicyEvaluationOut
+from ..schemas.workbench import WorkbenchResolutionOut
 from ..services import auto_client
 from ..services.insights import generate_insights
 
@@ -134,13 +136,13 @@ def _execute_tool(name: str, tool_input: dict, db: Session) -> str:
             employee_id=tool_input.get("employee_id"),
             limit=tool_input.get("limit", 20),
         )
-        return json.dumps([r.model_dump(mode="json") for r in rows])
+        return json.dumps([PolicyEvaluationOut.model_validate(r).model_dump(mode="json") for r in rows])
     if name == "list_workbench_resolutions":
         rows = workbench_router.list_workbench_resolutions(
             item_type=tool_input.get("item_type"),
             limit=tool_input.get("limit", 20),
         )
-        return json.dumps([r.model_dump(mode="json") for r in rows])
+        return json.dumps([WorkbenchResolutionOut.model_validate(r).model_dump(mode="json") for r in rows])
     if name == "list_insights":
         severity = tool_input.get("severity")
         q = db.query(InsightModel)
