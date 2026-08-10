@@ -83,6 +83,7 @@ export function RunOrchestratorModal({ open, onClose }: RunOrchestratorModalProp
               type="text"
               value={fields.sensitive_category_labels ?? ''}
               onChange={(e) => setFields((f) => ({ ...f, sensitive_category_labels: e.target.value }))}
+              placeholder="Comma-separated category labels"
               className="w-full rounded-lg border border-input bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-cornflower/50"
             />
           </div>
@@ -92,6 +93,7 @@ export function RunOrchestratorModal({ open, onClose }: RunOrchestratorModalProp
               type="text"
               value={fields.normal_category_labels ?? ''}
               onChange={(e) => setFields((f) => ({ ...f, normal_category_labels: e.target.value }))}
+              placeholder="Comma-separated category labels"
               className="w-full rounded-lg border border-input bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-cornflower/50"
             />
           </div>
